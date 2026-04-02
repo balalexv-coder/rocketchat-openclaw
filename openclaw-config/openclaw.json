@@ -16,15 +16,32 @@
   },
   "channels": {
     "rocketchat": {
-      "enabled": true
+      "enabled": true,
+      "serverUrl": "http://rocketchat:3100",
+      "port": 3100,
+      "dmPolicy": "pairing",
+      "accounts": {
+        "admin-bot": {
+          "botUsername": "openclaw-bot",
+          "botDisplayName": "Admin"
+        }
+      }
     }
   },
+  "bindings": [
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "rocketchat",
+        "accountId": "admin-bot"
+      }
+    }
+  ],
   "plugins": {
-    "allow": ["rocketchat"],
+    "allow": ["openclaw-rocketchat"],
     "entries": {
-      "rocketchat": {
-        "enabled": true,
-        "config": {}
+      "openclaw-rocketchat": {
+        "enabled": true
       }
     }
   }

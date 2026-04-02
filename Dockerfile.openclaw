@@ -1,9 +1,4 @@
 FROM ghcr.io/openclaw/openclaw:latest
 
-# Switch to root to install global npm package
-USER root
-RUN npm install -g openclaw-rocketchat@latest
-USER node
-
 # Default port for this instance
 ENV OPENCLAW_GATEWAY_PORT=18790

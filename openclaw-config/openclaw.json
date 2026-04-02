@@ -14,36 +14,5 @@
         "model": "anthropic/claude-opus-4-6"
       }
     ]
-  },
-  "channels": {
-    "rocketchat": {
-      "enabled": true,
-      "serverUrl": "http://rocketchat:3100",
-      "port": 3100,
-      "dmPolicy": "pairing",
-      "accounts": {
-        "admin-bot": {
-          "botUsername": "openclaw-bot",
-          "botDisplayName": "Admin"
-        }
-      }
-    }
-  },
-  "bindings": [
-    {
-      "agentId": "main",
-      "match": {
-        "channel": "rocketchat",
-        "accountId": "admin-bot"
-      }
-    }
-  ],
-  "plugins": {
-    "allow": ["openclaw-rocketchat"],
-    "entries": {
-      "openclaw-rocketchat": {
-        "enabled": true
-      }
-    }
   }
 }

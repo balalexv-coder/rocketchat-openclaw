@@ -1,0 +1,7 @@
+FROM ghcr.io/openclaw/openclaw:latest
+
+# Install the Rocket.Chat community channel plugin
+RUN npm install -g openclaw-rocketchat@latest
+
+# Default port for this instance (overridden via env if needed)
+ENV OPENCLAW_GATEWAY_PORT=18790

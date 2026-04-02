@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mongo:
     image: mongo:6.0
@@ -39,7 +37,7 @@ services:
       ROOT_URL: ${ROOT_URL:-https://chat.balalexv.tech}
       MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/rocketchat?replicaSet=rs0}
       MONGO_OPLOG_URL: ${MONGO_OPLOG_URL:-mongodb://mongo:27017/local?replicaSet=rs0}
-      PORT: 3100
+      PORT: "3100"
       DEPLOY_PLATFORM: docker
       OVERWRITE_SETTING_Show_Setup_Wizard: completed
     ports:
@@ -56,7 +54,9 @@ services:
       start_period: 60s
 
   openclaw:
-    image: ghcr.io/openclaw/openclaw:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.openclaw
     restart: unless-stopped
     depends_on:
       rocketchat:
@@ -64,14 +64,12 @@ services:
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      ROCKET_CHAT_URL: ${ROCKET_CHAT_URL:-http://rocketchat:3100}
-      ROCKET_CHAT_USER: ${ROCKET_CHAT_USER}
-      ROCKET_CHAT_PASSWORD: ${ROCKET_CHAT_PASSWORD}
+      OPENCLAW_GATEWAY_PORT: "18790"
     ports:
       - "18790:18790"
     volumes:
-      - ./openclaw-config:/app/config
-      - openclaw-data:/app/data
+      - ./openclaw-config:/home/node/.openclaw
+      - openclaw-workspace:/home/node/.openclaw/workspace
     networks:
       - chat-net
 
@@ -83,4 +81,4 @@ volumes:
   mongo-data:
   mongo-config:
   rocketchat-uploads:
-  openclaw-data:
+  openclaw-workspace:

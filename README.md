@@ -1,127 +1,133 @@
 # Rocket.Chat + OpenClaw — Self-Hosted Deployment
 
-Self-hosted [Rocket.Chat](https://rocket.chat) paired with a dedicated [OpenClaw](https://github.com/openclaw/openclaw) AI-assistant instance, deployed via Docker Compose on a VPS.
+Self-hosted [Rocket.Chat](https://rocket.chat) with a dedicated [OpenClaw](https://github.com/openclaw/openclaw) AI assistant, deployed via Docker Compose.
 
-| Service | Internal address | External |
-|---------|-----------------|---------|
-| Rocket.Chat | `rocketchat:3100` | `https://chat.balalexv.tech` |
-| OpenClaw | `openclaw:18790` | `https://chat.balalexv.tech/openclaw/` |
-| MongoDB | `mongo:27017` | internal only |
+| Service     | Internal             | External                                   |
+|-------------|---------------------|--------------------------------------------|
+| Rocket.Chat | `rocketchat:3100`   | `https://chat.balalexv.tech`               |
+| OpenClaw    | `openclaw:18790`    | `https://chat.balalexv.tech/openclaw/`     |
+| MongoDB     | `mongo:27017`       | internal only                              |
 
 ## Prerequisites
 
-- Docker >= 24 and Docker Compose v2
-- A server reachable at `187.124.171.212` with ports 80, 443 open
-- DNS `A` record: `chat.balalexv.tech → 187.124.171.212`
-- Caddy (or another reverse proxy) running on the host, **outside** this Compose stack
-- An Anthropic API key
+- Docker >= 24, Docker Compose v2
+- Server at `187.124.171.212` with ports 80, 443 open
+- DNS A record: `chat.balalexv.tech → 187.124.171.212`
+- Caddy on the host (outside this Compose stack)
+- Anthropic API key
 
-## Quick start
+## Quick Start
 
 ```bash
-git clone <this-repo> rocketchat-openclaw
+git clone https://github.com/balalexv-coder/rocketchat-openclaw.git
 cd rocketchat-openclaw
 
-# 1. Run the setup script (copies .env, generates a gateway token)
+# 1. Setup — creates .env, generates gateway token
 bash scripts/setup.sh
 
-# 2. Fill in the required secrets
-$EDITOR .env
+# 2. Fill in secrets
+nano .env
 
-# 3. Start everything
+# 3. Launch
 docker compose up -d
 
-# 4. Tail logs until Rocket.Chat is ready
+# 4. Watch Rocket.Chat startup (~60s)
 docker compose logs -f rocketchat
 ```
 
-Open `https://chat.balalexv.tech` once Rocket.Chat reports it is listening.
+Open `https://chat.balalexv.tech` once Rocket.Chat is ready.
 
-## Bot user setup
+## Bot User Setup
 
-OpenClaw authenticates to Rocket.Chat as a regular bot user.
-
-1. Log in to Rocket.Chat as an administrator.
-2. Go to **Administration → Users → New User**.
-3. Fill in:
-   - **Name**: OpenClaw
-   - **Username**: `openclaw-bot` (must match `ROCKET_CHAT_USER` in `.env`)
-   - **Password**: strong password (must match `ROCKET_CHAT_PASSWORD` in `.env`)
-   - **Role**: `bot`
-4. Save, then restart the OpenClaw container so it picks up the credentials:
+1. Log in to Rocket.Chat as admin
+2. **Administration → Users → New User**
+   - Name: `OpenClaw`
+   - Username: `openclaw-bot` (must match `ROCKET_CHAT_USER` in `.env`)
+   - Password: strong password (must match `ROCKET_CHAT_PASSWORD` in `.env`)
+   - Role: `bot`
+3. Restart OpenClaw to pick up credentials:
 
 ```bash
 docker compose restart openclaw
 ```
 
-## openclaw-rocketchat plugin install
+## Architecture
 
-The `openclaw-rocketchat` community npm package must be installed inside the running OpenClaw container:
-
-```bash
-docker compose exec openclaw npm install -g openclaw-rocketchat
-docker compose restart openclaw
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Caddy      │────▶│  Rocket.Chat │◀───▶│   MongoDB   │
+│  (TLS/proxy) │     │   :3100      │     │   :27017    │
+│              │     └──────────────┘     └─────────────┘
+│              │     ┌──────────────┐
+│              │────▶│   OpenClaw   │
+│              │     │   :18790     │
+└─────────────┘     └──────────────┘
 ```
 
-OpenClaw will discover and load the plugin automatically on next start.
+- **Caddy** terminates TLS, proxies `/openclaw/*` to OpenClaw, everything else to Rocket.Chat
+- **OpenClaw** connects to Rocket.Chat via the `openclaw-rocketchat` plugin (baked into the Docker image)
+- **MongoDB** runs as a replica set (required by Rocket.Chat)
 
-## Caddy reverse proxy
+## Caddy Setup
 
-Copy (or include) the snippet in `caddy/Caddyfile` into your Caddy configuration and reload:
+Copy `caddy/Caddyfile` into your host Caddy config and reload:
 
 ```bash
+sudo cp caddy/Caddyfile /etc/caddy/Caddyfile.d/chat.balalexv.tech
 sudo caddy reload --config /etc/caddy/Caddyfile
 ```
 
-Key points:
-- The `/openclaw/` path prefix is handled **before** the Rocket.Chat catch-all.
-- WebSocket upgrade is handled automatically by Caddy's `reverse_proxy` directive.
-- TLS certificates are obtained automatically via ACME (Let's Encrypt / ZeroSSL).
+TLS certificates are obtained automatically (Let's Encrypt / ZeroSSL).
 
-## Environment variables
+## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic API key for the OpenClaw AI provider |
-| `OPENCLAW_GATEWAY_TOKEN` | 64-char hex token securing the OpenClaw gateway |
-| `ROOT_URL` | Public URL of Rocket.Chat (used by the browser) |
-| `ROCKET_CHAT_URL` | Internal URL OpenClaw uses to reach Rocket.Chat |
-| `ROCKET_CHAT_USER` | Rocket.Chat bot account username |
-| `ROCKET_CHAT_PASSWORD` | Rocket.Chat bot account password |
-| `MONGO_URL` | MongoDB connection string for Rocket.Chat |
-| `MONGO_OPLOG_URL` | MongoDB oplog connection string for Rocket.Chat |
+| Variable                 | Description                                    |
+|--------------------------|------------------------------------------------|
+| `ANTHROPIC_API_KEY`      | Anthropic API key                              |
+| `OPENCLAW_GATEWAY_TOKEN` | 64-char hex token for OpenClaw gateway         |
+| `ROOT_URL`               | Public Rocket.Chat URL                         |
+| `ROCKET_CHAT_USER`       | Bot account username                           |
+| `ROCKET_CHAT_PASSWORD`   | Bot account password                           |
+| `MONGO_URL`              | MongoDB connection string                      |
+| `MONGO_OPLOG_URL`        | MongoDB oplog connection string                |
 
-## Project structure
+## File Structure
 
 ```
-.
+├── Dockerfile.openclaw          # OpenClaw image + rocketchat plugin
+├── docker-compose.yml           # All services
+├── .env.example                 # Template for secrets
 ├── caddy/
-│   └── Caddyfile            # Caddy reverse-proxy snippet
+│   └── Caddyfile                # Reverse proxy config
 ├── openclaw-config/
-│   ├── openclaw.json        # OpenClaw configuration
+│   ├── openclaw.json            # OpenClaw configuration
 │   └── agents/
 │       └── admin/
-│           └── SOUL.md      # Agent personality / role definition
-├── scripts/
-│   └── setup.sh             # First-run helper
-├── docker-compose.yml
-├── .env.example
-└── .gitignore
+│           └── SOUL.md          # Agent personality
+└── scripts/
+    └── setup.sh                 # First-run helper
 ```
 
-## Updating
+## Operations
 
 ```bash
+# Update images
 docker compose pull
-docker compose up -d
-```
+docker compose up -d --build
 
-## Stopping / cleanup
+# View logs
+docker compose logs -f openclaw
 
-```bash
-# Stop containers, keep volumes
+# Stop (keep data)
 docker compose down
 
-# Stop containers AND delete all data volumes (destructive!)
+# Stop and DELETE all data
 docker compose down -v
 ```
+
+## Notes
+
+- This is a **completely separate** OpenClaw instance (port 18790) — no connection to any existing OpenClaw deployment
+- The `openclaw-rocketchat` plugin is pre-installed via `Dockerfile.openclaw`
+- MongoDB requires a replica set — `mongo-init` handles initialization automatically
+- OpenClaw config is bind-mounted from `./openclaw-config/` → `/home/node/.openclaw/`

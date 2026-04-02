@@ -1,0 +1,39 @@
+chat.balalexv.tech {
+    # Reverse proxy for OpenClaw — must come before the catch-all
+    handle /openclaw/* {
+        reverse_proxy openclaw:18790 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Rocket.Chat — WebSocket support included
+    handle {
+        reverse_proxy rocketchat:3100 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+
+            # Required for Rocket.Chat WebSocket / LiveChat
+            transport http {
+                versions 1.1 2
+            }
+        }
+    }
+
+    # TLS managed automatically by Caddy
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+    encode gzip zstd
+
+    log {
+        output stderr
+        format console
+        level INFO
+    }
+}

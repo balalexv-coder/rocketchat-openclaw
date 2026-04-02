@@ -1,0 +1,32 @@
+{
+  "provider": {
+    "type": "anthropic",
+    "apiKey": "${ANTHROPIC_API_KEY}"
+  },
+  "defaultModel": "anthropic/claude-opus-4-6",
+  "gateway": {
+    "token": "${OPENCLAW_GATEWAY_TOKEN}",
+    "bind": "lan",
+    "mode": "local",
+    "port": 18790
+  },
+  "agents": [
+    {
+      "name": "admin",
+      "soulFile": "agents/admin/SOUL.md",
+      "model": "anthropic/claude-opus-4-6",
+      "language": "en"
+    }
+  ],
+  "plugins": [
+    {
+      "name": "openclaw-rocketchat",
+      "package": "openclaw-rocketchat",
+      "config": {
+        "url": "${ROCKET_CHAT_URL}",
+        "username": "${ROCKET_CHAT_USER}",
+        "password": "${ROCKET_CHAT_PASSWORD}"
+      }
+    }
+  ]
+}

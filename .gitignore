@@ -1,0 +1,18 @@
+# Secrets — never commit
+.env
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Docker runtime artifacts
+*.log
+
+# Caddy auto-generated certs (if stored locally)
+caddy/data/
+caddy/config/

@@ -64,9 +64,9 @@ services:
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      OPENCLAW_GATEWAY_PORT: "18790"
+      OPENCLAW_GATEWAY_PORT: "18791"
     ports:
-      - "18790:18790"
+      - "18791:18791"
     volumes:
       - ./openclaw-config:/home/node/.openclaw
       - openclaw-workspace:/home/node/.openclaw/workspace
